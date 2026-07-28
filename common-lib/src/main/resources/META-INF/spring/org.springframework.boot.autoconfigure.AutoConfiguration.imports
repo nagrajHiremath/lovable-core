@@ -1,0 +1,2 @@
+com.lovable.services.common_lib.security.SharedSecurityAutoConfiguration
+com.lovable.services.common_lib.exception.SharedExceptionAutoConfiguration
