@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: config-service
-          image: anuj55149/lovable-config-service:latest
+          image: nagrajh/lovable-config-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8888

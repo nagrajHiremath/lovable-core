@@ -1,0 +1,56 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: lovable-services-staging
+  namespace: lovable-core
+
+# Base configuration
+bases:
+  - ../../
+
+# Staging-specific replicas (2 replicas for staging for HA)
+replicas:
+  - name: account-service
+    count: 2
+  - name: api-gateway
+    count: 2
+  - name: config-service
+    count: 1
+  - name: intelligence-service
+    count: 2
+  - name: workspace-service
+    count: 2
+
+# Staging-specific labels
+commonLabels:
+  environment: staging
+  app: lovable-platform
+
+# Staging-specific patches for resource requests/limits
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 100m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 256Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 500m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 512Mi
+
+# Config maps for staging environment
+configMapGenerator:
+  - name: lovable-staging-config
+    namespace: lovable-core
+    literals:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+

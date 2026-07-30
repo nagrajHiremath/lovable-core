@@ -11,8 +11,8 @@
 	<groupId>com.lovable.services</groupId>
 	<artifactId>api-gateway</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>api-gateway</name>
+	<description>API Gateway for routing requests to backend services</description>
 	<url/>
 	<licenses>
 		<license/>

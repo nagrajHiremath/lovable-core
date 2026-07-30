@@ -42,7 +42,7 @@ public class ChatEvent {
 
   String idempotencyKey;
 
+
   @Enumerated(EnumType.STRING)
-//  @Column(nullable = false)
   ChatEventStatus status;
 }

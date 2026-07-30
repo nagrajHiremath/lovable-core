@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: account-service
-          image: anuj55149/lovable-account-service:latest
+          image: nagrajh/lovable-account-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 9050

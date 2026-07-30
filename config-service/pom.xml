@@ -11,8 +11,8 @@
 	<groupId>com.lovable.services</groupId>
 	<artifactId>config-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>config-service</name>
+	<description>Config Service for managing application configurations</description>
 	<url/>
 	<licenses>
 		<license/>

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lovable-ui
+  namespace: lovable-core
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lovable-ui
+  template:
+    metadata:
+      labels:
+        app: lovable-ui
+    spec:
+      containers:
+        - name: lovable-ui
+          image: nagrajh/lovable-ui:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lovable-ui
+  namespace: lovable-core
+spec:
+  type: ClusterIP
+  selector:
+    app: lovable-ui
+  ports:
+    - port: 80
+      targetPort: 80

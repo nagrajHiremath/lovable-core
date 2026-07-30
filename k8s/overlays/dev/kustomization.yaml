@@ -1,0 +1,56 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: lovable-services-dev
+  namespace: lovable-core
+
+# Base configuration
+bases:
+  - ../../
+
+# Dev-specific replicas (single replicas for development)
+replicas:
+  - name: account-service
+    count: 1
+  - name: api-gateway
+    count: 1
+  - name: config-service
+    count: 1
+  - name: intelligence-service
+    count: 1
+  - name: workspace-service
+    count: 1
+
+# Dev-specific labels
+commonLabels:
+  environment: dev
+  app: lovable-platform
+
+# Dev-specific patches for resource requests/limits (lower for dev)
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 50m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 128Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 100m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 256Mi
+
+# Config maps for dev environment
+configMapGenerator:
+  - name: lovable-dev-config
+    namespace: lovable-core
+    literals:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+      - DEBUG_MODE=true
+

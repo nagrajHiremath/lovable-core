@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: intelligence-service
-          image: anuj55149/lovable-intelligence-service:latest
+          image: nagrajh/lovable-intelligence-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 9030

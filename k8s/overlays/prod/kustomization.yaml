@@ -1,0 +1,72 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: lovable-services-prod
+  namespace: lovable-core
+
+# Base configuration
+bases:
+  - ../../
+
+# Production replicas (3+ replicas for HA and load balancing)
+replicas:
+  - name: account-service
+    count: 3
+  - name: api-gateway
+    count: 3
+  - name: config-service
+    count: 2
+  - name: intelligence-service
+    count: 3
+  - name: workspace-service
+    count: 3
+
+# Production-specific labels
+commonLabels:
+  environment: prod
+  app: lovable-platform
+
+# Production-specific patches for resource requests/limits (higher for prod)
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 250m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 512Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 1000m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 1Gi
+      - op: add
+        path: /spec/template/spec/affinity
+        value:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                      - key: app
+                        operator: In
+                        values:
+                          - lovable-platform
+                  topologyKey: kubernetes.io/hostname
+
+# Config maps for production environment
+configMapGenerator:
+  - name: lovable-prod-config
+    namespace: lovable-core
+    literals:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=WARN
+      - DEBUG_MODE=false
+      - ENABLE_MONITORING=true
+      - ENABLE_ALERTING=true
+
