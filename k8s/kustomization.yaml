@@ -34,11 +34,8 @@ secretGenerator:
     envs:
       - .env
     behavior: create
-
-# Configure common annotations for all resources
-commonAnnotations:
-  description: "Lovable Platform - Microservices Architecture"
-  managed-by: "kustomize"
+    options:
+      disableNameSuffixHash: true
 
 # Replicas configuration (can be overridden in overlays)
 replicas:

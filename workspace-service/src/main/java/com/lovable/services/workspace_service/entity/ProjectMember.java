@@ -17,7 +17,7 @@ import java.time.Instant;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "project_member")
 public class ProjectMember {
-  @EmbeddedId ProjectMemberId projectMemberId;
+  @EmbeddedId ProjectMemberId id;
 
   @ManyToOne
   @MapsId("projectId")

@@ -10,11 +10,9 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface ProjectMemberMapper {
 
-  @Mapping(target = "userId", source = "user.id")
-  @Mapping(target = "userName", source = "user.name")
+  @Mapping(target = "userId", source = "id.userId")
   MemberResponse toMemberResponse(ProjectMember projectMember);
 
-  @Mapping(target = "userId", source = "user.id")
-  @Mapping(target = "userName", source = "user.name")
+  @Mapping(target = "userId", source = "id.userId")
   List<MemberResponse> toMemberResponseList(List<ProjectMember> projectMemberList);
 }

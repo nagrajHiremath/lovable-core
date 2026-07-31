@@ -42,7 +42,7 @@ public class ProjectServiceImpl implements ProjectService {
     ProjectMember projectMember =
         ProjectMember.builder()
             .project(project)
-            .projectMemberId(new ProjectMemberId(project.getId(), authUtil.getCurrentUserId()))
+            .id(new ProjectMemberId(project.getId(), authUtil.getCurrentUserId()))
             .projectRole(ProjectRole.OWNER)
             .acceptedAt(Instant.now())
             .invitedAt(Instant.now())

@@ -44,7 +44,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     ProjectMember projectMember =
         ProjectMember.builder()
-            .projectMemberId(projectMemberId)
+            .id(projectMemberId)
             .projectRole(inviteMemberRequest.projectRole())
             .invitedAt(Instant.now())
             .project(project)

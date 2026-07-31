@@ -37,7 +37,7 @@ public class IntelligenceSecurityConfig {
             auth -> auth
                     .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                     .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/api/auth/**", "/webhooks/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                     .anyRequest()
                     .authenticated())
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
