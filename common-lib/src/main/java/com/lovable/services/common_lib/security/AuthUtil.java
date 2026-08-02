@@ -5,9 +5,11 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -17,12 +19,11 @@ import java.util.Date;
 @Service
 public class AuthUtil {
 
-  @Value("${jwt.secret-key}")
+  @Value("${jwt.secretKey}")
   private String jwtSecretKey;
 
   private SecretKey getSecretKey() {
-    return Keys.hmacShaKeyFor(
-        "fkahgdsasjdashgkufjedtryuhjnbadfhsgzasdfghjk".getBytes(StandardCharsets.UTF_8));
+    return Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
   }
 
   public String generateAccessToken(JwtUserPrincipal user) {
@@ -38,8 +39,8 @@ public class AuthUtil {
 
   public String generateRefreshToken(JwtUserPrincipal user) {
     return Jwts.builder()
-        .subject("id")
-        .claim("username", user.getUsername())
+        .subject(user.getUsername())
+        .claim("id", user.userId())
         .claim("name", user.name())
         .issuedAt(new Date())
         .expiration(new Date(System.currentTimeMillis() + 1000 * 60))
@@ -62,10 +63,13 @@ public class AuthUtil {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
     if (authentication == null) {
-      throw new RuntimeException("user not login");
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authenticated");
     }
 
     JwtUserPrincipal principal = (JwtUserPrincipal) authentication.getPrincipal();
+    if (principal == null || principal.userId() == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "JWT token does not contain a user id");
+    }
     return principal.userId();
   }
 }

@@ -15,5 +15,6 @@ public interface AuthMapper {
 
   UserProfileResponse toUserProfileResponse(User newUser);
 
+  @Mapping(source = "id", target = "userId")
   JwtUserPrincipal toJwtUserPrincipal(User newUser);
 }

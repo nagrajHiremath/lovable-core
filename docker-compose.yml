@@ -103,7 +103,7 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # Creates the project-files bucket on first startup (mirrors runner-pool mc init).
+  # Creates the buckets expected by workspace-service on first startup.
   minio-init:
     image: minio/mc:latest
     container_name: lovable-minio-init-local
@@ -113,29 +113,54 @@ services:
     entrypoint: >
       /bin/sh -c "
       mc alias set local http://minio:9000 minioadmin minioadmin123;
-      mc mb --ignore-existing local/project-files;
-      mc anonymous set private local/project-files;
+      mc mb --ignore-existing local/projects;
+      mc mb --ignore-existing local/starter-projects;
+      mc anonymous set private local/projects;
+      mc anonymous set private local/starter-projects;
       exit 0;
       "
     restart: "no"
 
-  # ── Reverse Proxy (preview wildcard router) ────────────────────────────────
-  # Reuses k8s/reverse-proxy Dockerfile and points to local compose Redis.
-  reverse-proxy:
-    build:
-      context: .
-      dockerfile: docker/reverse-proxy/Dockerfile
-    image: ${REVERSE_PROXY_IMAGE:-lovable/reverse-proxy:local}
-    container_name: lovable-reverse-proxy-local
-    environment:
-      REDIS_URL: redis://redis:6379
-      PORT: "80"
+  # ── Spring services for mixed local debugging ───────────────────────────────
+  # These run in Docker while other services can still run from IntelliJ.
+  config-service:
+    image: nagrajh/lovable-config-service:latest
+    container_name: lovable-config-service-local
     ports:
-      - "8080:80"
-    depends_on:
-      redis:
-        condition: service_healthy
+      - "8888:8888"
     restart: unless-stopped
+
+  account-service:
+    image: nagrajh/lovable-account-service:latest
+    container_name: lovable-account-service-local
+    depends_on:
+      - postgres
+      - config-service
+    environment:
+      CONFIG_SERVER_URL: http://config-service:8888
+      SPRING_CLOUD_CONFIG_FAIL_FAST: "false"
+      DB_PASSWORD: account_password
+      JWT_SECRET: ${JWT_SECRET:-local-dev-jwt-secret-change-me}
+      STRIPE_API_KEY: ${STRIPE_API_KEY:-sk_test_placeholder}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_placeholder}
+    ports:
+      - "9050:9050"
+    restart: unless-stopped
+
+  api-gateway:
+    image: nagrajh/lovable-api-gateway:latest
+    container_name: lovable-api-gateway-local
+    depends_on:
+      - config-service
+      - account-service
+    environment:
+      CONFIG_SERVER_URL: http://config-service:8888
+      SPRING_CLOUD_CONFIG_FAIL_FAST: "false"
+      JWT_SECRET: ${JWT_SECRET:-local-dev-jwt-secret-change-me}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
 
 volumes:
   pg_data:

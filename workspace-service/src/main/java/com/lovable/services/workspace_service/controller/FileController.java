@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/projects/{projectId}/files")
+@RequestMapping("/projects/{projectId}/files")
 public class FileController {
 
   private final ProjectFileService projectFileService;
 
-  @GetMapping
+  @GetMapping("/tree")
   public ResponseEntity<FileTreeResponse> getFileTree(@PathVariable Long projectId) {
     return ResponseEntity.ok(projectFileService.getFileTree(projectId));
   }
