@@ -34,7 +34,7 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: lovable-previews
+              kubernetes.io/metadata.name: lovable-preview
       # ONLY on port 9000
       ports:
         - protocol: TCP

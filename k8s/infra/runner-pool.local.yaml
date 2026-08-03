@@ -19,9 +19,9 @@ spec:
         - name: workspace
           emptyDir: {}
       containers:
-        # 1. THE RUNNER (Vite / Node.js)
         - name: runner
           image: node:20-alpine
+          imagePullPolicy: IfNotPresent
           workingDir: /app
           command: ["/bin/sh", "-c", "sleep infinity"]
           volumeMounts:
@@ -37,24 +37,19 @@ spec:
               memory: "1Gi"
               cpu: "500m"
 
-        # 2. THE SYNCER (MinIO mc)
         - name: syncer
           image: minio/mc
+          imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c", "sleep infinity"]
           env:
+            # Local defaults for Docker MinIO from docker-compose.yml
             - name: MINIO_USER
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: MINIO_ROOT_USER
+              value: "minioadmin"
             - name: MINIO_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: MINIO_ROOT_PASSWORD
-            # Constructing the host URL for the internal MinIO service
+              value: "minioadmin123"
+            # Pods use host.docker.internal to reach host-published MinIO at :9000
             - name: MC_HOST_myminio
-              value: "http://$(MINIO_USER):$(MINIO_PASS)@minio.lovable-core.svc.cluster.local:9000"
+              value: "http://minioadmin:minioadmin123@host.docker.internal:9000"
           volumeMounts:
             - name: workspace
               mountPath: /app
@@ -65,3 +60,4 @@ spec:
             limits:
               memory: "256Mi"
               cpu: "200m"
+

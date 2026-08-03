@@ -11,7 +11,7 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: lovable-previews
+  name: lovable-preview
 
 ---
 # configmap for shared config values across services
@@ -23,6 +23,6 @@ metadata:
   namespace: lovable-core
 data:
   PREVIEW_DOMAIN: "localhost"
-  PREVIEW_NAMESPACE: "lovable-previews"
+  PREVIEW_NAMESPACE: "lovable-preview"
   PROXY_PORT: "80"
   APP_FRONTEND_URL: "localhost"

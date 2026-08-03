@@ -4,7 +4,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: strict-preview-sandbox
-  namespace: lovable-previews
+  namespace: lovable-preview
 spec:
   podSelector: {} # Applies to all user runner pods
   policyTypes:

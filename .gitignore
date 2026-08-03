@@ -1,0 +1,4 @@
+.env
+
+reverse-proxy/node_modules
+reverse-proxy/dist

@@ -6,7 +6,7 @@ services:
   # dedicated users – same structure as production.
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: lovable-pgvector-local
+    container_name: pgvector
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
       POSTGRES_USER: postgres
@@ -33,7 +33,7 @@ services:
   # Java services running on localhost connect via PLAINTEXT_HOST → localhost:29092
   kafka:
     image: confluentinc/confluent-local:7.5.0
-    container_name: lovable-kafka-local
+    container_name: kafka
     environment:
       KAFKA_HEAP_OPTS: "-Xms512M -Xmx512M"
       KAFKA_LOG4J_ROOT_LOGLEVEL: "ERROR"
@@ -69,7 +69,7 @@ services:
   # Mirrors k8s/stateful/redis.yaml – no password, plain redis:7-alpine.
   redis:
     image: redis:7-alpine
-    container_name: lovable-redis-local
+    container_name: redis
     ports:
       - "6379:6379"
     volumes:
@@ -81,12 +81,27 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # ── Reverse Proxy ───────────────────────────────────────────────────────────
+  # Mirrors k8s/reverse-proxy container port (80) and Redis-based route lookup.
+  reverse-proxy:
+    image: nagrajh/lovable-reverse-proxy
+    container_name: reverse-proxy
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_URL: redis://redis:6379
+      PORT: "80"
+    ports:
+      - "8090:80"
+    restart: unless-stopped
+
   # ── MinIO ──────────────────────────────────────────────────────────────────
   # Mirrors k8s/stateful/minio.yaml – same image and port layout.
   # Credentials: MINIO_ROOT_USER / MINIO_ROOT_PASSWORD (set locally here).
   minio:
     image: minio/minio:latest
-    container_name: lovable-minio-local
+    container_name: minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -106,7 +121,7 @@ services:
   # Creates the buckets expected by workspace-service on first startup.
   minio-init:
     image: minio/mc:latest
-    container_name: lovable-minio-init-local
+    container_name: minio-init
     depends_on:
       minio:
         condition: service_healthy
@@ -125,14 +140,14 @@ services:
   # These run in Docker while other services can still run from IntelliJ.
   config-service:
     image: nagrajh/lovable-config-service:latest
-    container_name: lovable-config-service-local
+    container_name: config-service
     ports:
       - "8888:8888"
     restart: unless-stopped
 
   account-service:
     image: nagrajh/lovable-account-service:latest
-    container_name: lovable-account-service-local
+    container_name: account-service
     depends_on:
       - postgres
       - config-service
@@ -149,7 +164,7 @@ services:
 
   api-gateway:
     image: nagrajh/lovable-api-gateway:latest
-    container_name: lovable-api-gateway-local
+    container_name: api-gateway
     depends_on:
       - config-service
       - account-service
