@@ -23,7 +23,7 @@ metadata:
   namespace: lovable-core
 data:
   # Leading dot keeps subdomain routing intact; nip.io resolves the host without a real domain.
-  PREVIEW_DOMAIN: ".34.14.138.43.nip.io"
+  PREVIEW_DOMAIN: ".34-14-138-43.nip.io"
   PREVIEW_NAMESPACE: "lovable-preview"
   PROXY_PORT: "80"
   APP_FRONTEND_URL: "localhost"
