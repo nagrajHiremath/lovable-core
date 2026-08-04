@@ -148,9 +148,9 @@ services:
   account-service:
     image: nagrajh/lovable-account-service:latest
     container_name: account-service
-    depends_on:
-      - postgres
-      - config-service
+#    depends_on:
+#      - postgres
+#      - config-service
     environment:
       CONFIG_SERVER_URL: http://config-service:8888
       SPRING_CLOUD_CONFIG_FAIL_FAST: "false"
