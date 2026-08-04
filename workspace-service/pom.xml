@@ -107,7 +107,7 @@
 		<dependency>
 			<groupId>com.lovable.services</groupId>
 			<artifactId>common-lib</artifactId>
-			<version>1.0.0</version>
+			<version>0.0.1-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
 

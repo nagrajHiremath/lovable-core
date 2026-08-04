@@ -4,7 +4,7 @@ kind: Kustomization
 # Create namespaces first
 resources:
   # Infrastructure and base resources
-  - infra/namspaces.yaml
+  - infra/namespaces.yaml
   - infra/core-network-policy.yaml
   - infra/preview-network-policy.yaml
   - infra/runner-pool.yaml
