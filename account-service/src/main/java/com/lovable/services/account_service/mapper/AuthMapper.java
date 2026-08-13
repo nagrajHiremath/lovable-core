@@ -13,6 +13,7 @@ public interface AuthMapper {
   @Mapping(source = "username", target = "username")
   User toUserEntity(SignUpRequest signUpRequest);
 
+  @Mapping(source = "id", target = "userId")
   UserProfileResponse toUserProfileResponse(User newUser);
 
   @Mapping(source = "id", target = "userId")

@@ -138,13 +138,16 @@ public class AiGenerationServiceImpl implements AiGenerationService {
       usageService.recordTokenUsage(chatSession.getId().getUserId(), totalTokens);
     }
 
+    Integer promptTokens = usage != null ? usage.getPromptTokens() : null;
+    Integer completionTokens = usage != null ? usage.getCompletionTokens() : null;
+
     // Save the User message
     chatMessageRepository.save(
         ChatMessage.builder()
             .chatSession(chatSession)
             .role(MessageRole.USER)
             .content(userMessage)
-            .tokensUsed(usage.getPromptTokens())
+            .tokensUsed(promptTokens)
             .build());
 
     ChatMessage assistantChatMessage =
@@ -152,7 +155,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
             .role(MessageRole.ASSISTANT)
             .content("Assistant Message here...")
             .chatSession(chatSession)
-            .tokensUsed(usage.getCompletionTokens())
+            .tokensUsed(completionTokens)
             .build();
 
     assistantChatMessage = chatMessageRepository.save(assistantChatMessage);

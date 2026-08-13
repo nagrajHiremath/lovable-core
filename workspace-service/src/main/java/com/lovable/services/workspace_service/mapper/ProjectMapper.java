@@ -6,6 +6,7 @@ import com.lovable.services.workspace_service.dto.project.ProjectSummaryResponse
 import com.lovable.services.workspace_service.dto.project.ProjectUpdateRequest;
 import com.lovable.services.workspace_service.entity.Project;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 import java.util.List;
@@ -14,14 +15,17 @@ import java.util.List;
 public interface ProjectMapper {
   Project toProjectEntity(ProjectRequest projectRequest);
 
+  @Mapping(target = "role", ignore = true)
   ProjectResponse toProjectResponse(Project project);
 
   List<ProjectSummaryResponse> toListProjectSummaryResponse(List<Project> projects);
 
+  @Mapping(target = "role", ignore = true)
   ProjectResponse toProjectResponse(ProjectUpdateRequest projectUpdateRequest);
 
   void updateProject(
           ProjectUpdateRequest projectUpdateRequest, @MappingTarget Project existingProject);
 
-    ProjectSummaryResponse toProjectSummaryResponse(Project project);
+  @Mapping(target = "role", ignore = true)
+  ProjectSummaryResponse toProjectSummaryResponse(Project project);
 }

@@ -1,0 +1,281 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand: coral #FF6A5C -> pink #E056A7 -> violet #7C4DFF, matching the
+       landing page and dashboard. Violet carries the primary accent through
+       the app; pink/coral are reserved for the gradient and sparing accents. */
+    --background: 228 60% 3%;
+    --foreground: 210 20% 96%;
+
+    --card: 228 45% 7%;
+    --card-foreground: 210 20% 96%;
+
+    --popover: 228 45% 9%;
+    --popover-foreground: 210 20% 96%;
+
+    --primary: 256 85% 66%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 325 60% 58%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 228 22% 13%;
+    --muted-foreground: 218 14% 62%;
+
+    --accent: 8 80% 62%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 228 25% 16%;
+    --input: 228 25% 15%;
+    --ring: 256 85% 66%;
+
+    --radius: 0.5rem;
+
+    /* Custom tokens */
+    --panel: 228 40% 6%;
+    --panel-hover: 228 35% 10%;
+    --panel-active: 228 32% 13%;
+    --chat-user: 256 45% 22%;
+    --chat-ai: 325 35% 18%;
+    --file-active: 256 40% 20%;
+    --syntax-keyword: 280 70% 70%;
+    --syntax-string: 140 60% 60%;
+    --syntax-number: 35 90% 65%;
+    --syntax-comment: 220 15% 45%;
+    --syntax-function: 200 80% 65%;
+    --gradient-primary: linear-gradient(135deg, hsl(8 80% 62%) 0%, hsl(325 60% 58%) 50%, hsl(256 85% 66%) 100%);
+    --gradient-panel: linear-gradient(180deg, hsl(228 45% 8%) 0%, hsl(228 60% 3%) 100%);
+    --shadow-glow: 0 0 20px hsl(256 85% 66% / 0.18);
+    --shadow-panel: 0 4px 24px hsl(0 0% 0% / 0.5);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-panel border border-border/50 backdrop-blur-sm;
+    box-shadow: var(--shadow-panel);
+  }
+
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glow-effect {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .streaming-cursor {
+    @apply inline-block w-2 h-5 bg-primary animate-pulse ml-0.5;
+  }
+
+  .file-tree-item {
+    @apply flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors;
+    @apply hover:bg-panel-hover text-muted-foreground hover:text-foreground;
+  }
+
+  .file-tree-item.active {
+    @apply bg-file-active text-foreground;
+  }
+
+  .chat-message {
+    @apply p-4 rounded-lg max-w-[85%] animate-fade-in;
+  }
+
+  .chat-message.user {
+    @apply bg-chat-user ml-auto;
+  }
+
+  .chat-message.ai {
+    @apply bg-chat-ai mr-auto;
+  }
+
+  .code-line {
+    @apply font-mono text-sm leading-6;
+  }
+
+  .panel-header {
+    @apply h-12 flex items-center justify-between px-4 border-b border-border/50 bg-panel;
+  }
+
+  .tab-button {
+    @apply px-4 py-2 text-sm font-medium transition-all rounded-md;
+    @apply text-muted-foreground hover:text-foreground hover:bg-panel-hover;
+  }
+
+  .tab-button.active {
+    @apply bg-primary/20 text-primary;
+  }
+}
+
+@layer utilities {
+  .animate-gradient-pan {
+    animation: gradientPan 7s ease-in-out infinite;
+  }
+
+  .animate-blob-drift {
+    animation: blobDrift 8s ease-in-out infinite;
+  }
+
+  .animate-galaxy-flow {
+    animation: galaxyFlow 6s ease-in-out infinite;
+  }
+
+  .animate-galaxy-spin {
+    animation: galaxySpin 10s linear infinite;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-stream {
+    animation: stream 0.05s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes stream {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes gradientPan {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+      filter: hue-rotate(0deg) saturate(1.3);
+      opacity: 0.85;
+    }
+    25% {
+      transform: translate3d(14%, -10%, 0) scale(1.3) rotate(4deg);
+      filter: hue-rotate(50deg) saturate(1.6);
+      opacity: 0.98;
+    }
+    50% {
+      transform: translate3d(-12%, 12%, 0) scale(1.4) rotate(-4deg);
+      filter: hue-rotate(90deg) saturate(1.8);
+      opacity: 0.88;
+    }
+    75% {
+      transform: translate3d(-15%, -8%, 0) scale(1.2) rotate(3deg);
+      filter: hue-rotate(45deg) saturate(1.5);
+      opacity: 0.95;
+    }
+  }
+
+  @keyframes blobDrift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+    }
+    25% {
+      transform: translate3d(20%, -16%, 0) scale(1.35) rotate(45deg);
+    }
+    50% {
+      transform: translate3d(-16%, 18%, 0) scale(0.85) rotate(90deg);
+    }
+    75% {
+      transform: translate3d(14%, 12%, 0) scale(1.25) rotate(135deg);
+    }
+  }
+
+  @keyframes galaxyFlow {
+    0%,
+    100% {
+      transform: translate3d(-10%, -6%, 0) scale(1.05) rotate(0deg);
+      background-position: 0% 50%;
+      filter: hue-rotate(0deg);
+      opacity: 0.7;
+    }
+    50% {
+      transform: translate3d(10%, 8%, 0) scale(1.3) rotate(4deg);
+      background-position: 100% 50%;
+      filter: hue-rotate(75deg);
+      opacity: 0.98;
+    }
+  }
+
+  @keyframes galaxySpin {
+    0% {
+      transform: rotate(0deg) scale(1.05);
+      filter: hue-rotate(0deg);
+      opacity: 0.6;
+    }
+    50% {
+      transform: rotate(180deg) scale(1.3);
+      filter: hue-rotate(120deg);
+      opacity: 0.9;
+    }
+    100% {
+      transform: rotate(360deg) scale(1.05);
+      filter: hue-rotate(240deg);
+      opacity: 0.6;
+    }
+  }
+}

@@ -4,6 +4,7 @@ import com.lovable.services.account_service.dto.auth.AuthResponse;
 import com.lovable.services.account_service.dto.auth.LoginRequest;
 import com.lovable.services.account_service.dto.auth.SignUpRequest;
 import com.lovable.services.account_service.service.AuthService;
+import com.lovable.services.common_lib.dto.UserProfileResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class AuthController {
   }
 
   @GetMapping("/profile")
-  public ResponseEntity<SignUpRequest> getCurrentProfile() {
+  public ResponseEntity<UserProfileResponse> getCurrentProfile() {
     return ResponseEntity.ok(authService.getCurrentProfile());
   }
 }

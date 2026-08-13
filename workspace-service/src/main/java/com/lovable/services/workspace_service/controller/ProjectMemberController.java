@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/project/{projectId}/project-member")
+@RequestMapping("/projects/{projectId}/members")
 public class ProjectMemberController {
   private final ProjectMemberService projectMemberService;
 
@@ -21,13 +21,13 @@ public class ProjectMemberController {
     return ResponseEntity.ok(projectMemberService.getAllMembers(projectId));
   }
 
-  @PostMapping("/invite")
+  @PostMapping
   public ResponseEntity<MemberResponse> inviteMember(
       @PathVariable Long projectId, @RequestBody InviteMemberRequest inviteMemberRequest) {
     return ResponseEntity.ok(projectMemberService.inviteMember(projectId, inviteMemberRequest));
   }
 
-  @PatchMapping
+  @PatchMapping("/{userId}")
   public ResponseEntity<MemberResponse> updateMemberRole(
       @PathVariable Long projectId,
       @PathVariable Long userId,
@@ -36,7 +36,7 @@ public class ProjectMemberController {
         projectMemberService.updateMemberRole(projectId, userId, updateMemberRoleRequest));
   }
 
-  @DeleteMapping
+  @DeleteMapping("/{userId}")
   public ResponseEntity<Void> deleteMember(
       @PathVariable Long projectId, @PathVariable Long userId) {
     projectMemberService.removeProjectMember(projectId, userId);

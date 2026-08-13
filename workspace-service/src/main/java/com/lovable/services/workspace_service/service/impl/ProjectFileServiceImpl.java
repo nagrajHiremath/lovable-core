@@ -18,11 +18,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -103,6 +106,32 @@ public class ProjectFileServiceImpl implements ProjectFileService {
       throw new RuntimeException("File save failed", e);
     }
 
+  }
+
+  @Override
+  public byte[] downloadProjectAsZip(Long projectId) {
+    List<ProjectFile> projectFileList = projectFileRepository.findByProjectId(projectId);
+
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
+      for (ProjectFile projectFile : projectFileList) {
+        zipOutputStream.putNextEntry(new ZipEntry(projectFile.getPath()));
+        try (InputStream is =
+            minioClient.getObject(
+                GetObjectArgs.builder()
+                    .bucket(projectBucket)
+                    .object(projectFile.getMinioObjectKey())
+                    .build())) {
+          is.transferTo(zipOutputStream);
+        }
+        zipOutputStream.closeEntry();
+      }
+    } catch (Exception e) {
+      log.error("Failed to build zip for project: {}", projectId, e);
+      throw new RuntimeException("Failed to build project zip", e);
+    }
+
+    return byteArrayOutputStream.toByteArray();
   }
 
   private String determineContentType(String path) {

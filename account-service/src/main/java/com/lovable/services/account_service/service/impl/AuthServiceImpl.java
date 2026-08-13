@@ -7,7 +7,9 @@ import com.lovable.services.account_service.entity.User;
 import com.lovable.services.account_service.mapper.AuthMapper;
 import com.lovable.services.account_service.repository.UserRepository;
 import com.lovable.services.account_service.service.AuthService;
+import com.lovable.services.common_lib.dto.UserProfileResponse;
 import com.lovable.services.common_lib.exception.BadRequestException;
+import com.lovable.services.common_lib.exception.ResourceNotFoundException;
 import com.lovable.services.common_lib.security.AuthUtil;
 import jakarta.servlet.http.Cookie;
 import lombok.AccessLevel;
@@ -62,7 +64,12 @@ public class AuthServiceImpl implements AuthService {
         authUtil.generateAccessToken(authMapper.toJwtUserPrincipal(user)), authMapper.toUserProfileResponse(user));
   }
 
-  public SignUpRequest getCurrentProfile() {
-    return null;
+  public UserProfileResponse getCurrentProfile() {
+    long userId = authUtil.getCurrentUserId();
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", String.valueOf(userId)));
+    return authMapper.toUserProfileResponse(user);
   }
 }

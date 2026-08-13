@@ -37,7 +37,10 @@ public class AccountSecurityConfig {
             auth -> auth
                     .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                     .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/auth/**", "/webhooks/**", "/actuator/**", "/internal/**").permitAll()
+                        .requestMatchers("/auth/**", "/webhooks/**", "/actuator/**", "/internal/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html").permitAll()
                     .anyRequest()
                     .authenticated())
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

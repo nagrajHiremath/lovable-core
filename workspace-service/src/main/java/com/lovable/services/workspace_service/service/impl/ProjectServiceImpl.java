@@ -52,18 +52,35 @@ public class ProjectServiceImpl implements ProjectService {
 
     projectTemplateService.initializeProjectFromTemplate(project.getId());
 
-    return projectMapper.toProjectResponse(project);
+    ProjectResponse response = projectMapper.toProjectResponse(project);
+    return new ProjectResponse(
+        response.id(), response.name(), response.userId(), response.createdAt(),
+        response.updatedAt(), response.deletedAt(), ProjectRole.OWNER);
   }
 
   public List<ProjectSummaryResponse> getUserProjects() {
     Long id = authUtil.getCurrentUserId();
     return projectRepository.findAllAccessibleByUser(id).stream()
-        .map(projectWithRole -> projectMapper.toProjectSummaryResponse(projectWithRole.getProject()))
+        .map(projectWithRole -> {
+          ProjectSummaryResponse summary =
+              projectMapper.toProjectSummaryResponse(projectWithRole.getProject());
+          return new ProjectSummaryResponse(
+              summary.id(), summary.name(), summary.createdAt(), summary.updatedAt(),
+              projectWithRole.getRole());
+        })
         .toList();
   }
 
   public ProjectResponse getProjectById(Long id) {
-    return projectMapper.toProjectResponse(projectRepository.findById(id).orElseThrow());
+    Project project = projectRepository.findById(id).orElseThrow();
+    ProjectResponse response = projectMapper.toProjectResponse(project);
+    ProjectRole role =
+        projectMemberRepository
+            .findRoleByProjectIdAndUserId(id, authUtil.getCurrentUserId())
+            .orElse(null);
+    return new ProjectResponse(
+        response.id(), response.name(), response.userId(), response.createdAt(),
+        response.updatedAt(), response.deletedAt(), role);
   }
 
   public ProjectResponse updateProject(Long id, ProjectUpdateRequest projectUpdateRequest) {
