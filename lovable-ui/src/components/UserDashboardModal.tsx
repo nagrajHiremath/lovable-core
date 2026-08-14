@@ -177,11 +177,16 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-1 text-xs font-bold shadow-md">
-                    {currentPlan?.name || "Free Plan"}
+                    {currentPlan?.name || "Free"}
                   </Badge>
-                  <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 text-xs font-semibold">
-                    {subscription?.status || "FREE"}
-                  </Badge>
+                  {/* Only show a status pill for a real subscription - a free user
+                      has no subscription at all, so "FREE" here would just repeat
+                      the plan badge next to it. */}
+                  {subscription?.status && (
+                    <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 text-xs font-semibold">
+                      {subscription.status}
+                    </Badge>
+                  )}
                 </div>
               </div>
 
