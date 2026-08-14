@@ -42,7 +42,13 @@ public class StripePaymentProcessor implements PaymentProcessor {
   private final UserRepository userRepository;
   private final SubscriptionService subscriptionService;
 
-  @Value("${app.frontend.url}")
+  // Reads the FRONTEND_URL env var directly (with an inline default) rather than
+  // through common-config's app.frontend.url, whose k8s-profile value is itself
+  // "${FRONTEND_URL}" with no default of its own - a default on this annotation
+  // alone would NOT have prevented the resulting PlaceholderResolutionException,
+  // since the outer property already resolves to that unresolvable nested
+  // reference. Going straight to the env var avoids depending on that chain at all.
+  @Value("${FRONTEND_URL:http://34.14.138.43}")
   private String frontEndUrl;
 
   @Override
