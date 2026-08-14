@@ -26,6 +26,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
@@ -121,12 +122,24 @@ public class AiGenerationServiceImpl implements AiGenerationService {
                             usageRef.get());
                       });
             })
-        .doOnError(error -> log.error("Error during streaming for projectId: {}", projectId))
+        .doOnError(error -> log.error("Error during streaming for projectId: {}", projectId, error))
         .map(
             response -> {
               String text = response.getResult().getOutput().getText();
               return new StreamResponse(text != null ? text : "");
-            });
+            })
+        .onErrorResume(error -> Flux.just(new StreamResponse(userFacingErrorMessage(error))));
+  }
+
+  private String userFacingErrorMessage(Throwable error) {
+    if (error instanceof WebClientResponseException.TooManyRequests) {
+      return "\n\n⚠️ The AI model is currently rate-limited by the provider. Please wait a moment and try again.";
+    }
+    if (error instanceof WebClientResponseException webClientError) {
+      return "\n\n⚠️ The AI service returned an error (" + webClientError.getStatusCode().value()
+          + "). Please try again.";
+    }
+    return "\n\n⚠️ Something went wrong while generating a response. Please try again.";
   }
 
   private void finalizeChats(
@@ -153,7 +166,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
     ChatMessage assistantChatMessage =
         ChatMessage.builder()
             .role(MessageRole.ASSISTANT)
-            .content("Assistant Message here...")
+            .content(fullText)
             .chatSession(chatSession)
             .tokensUsed(completionTokens)
             .build();

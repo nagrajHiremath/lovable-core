@@ -20,8 +20,8 @@ spring:
             - Path=/api/v1/account/**
           filters:
             - StripPrefix=2
-
-        # Workspace Service (context-path: /workspace)
+            
+         # Workspace Service (context-path: /workspace)
         - id: workspace-service
           uri: ${WORKSPACE_SERVICE_URI:lb://workspace-service}
           predicates:

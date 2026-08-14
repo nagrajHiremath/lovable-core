@@ -86,7 +86,12 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
             execCommand(podName, SYNCER_CONTAINER, "sh", "-c", watchCmd);
 
             // Runner Commands
-            String startCmd = "npm install && nohup npm run dev -- --host 0.0.0.0 --port 5173 > /app/dev.log 2>&1 &";
+            // Start the dev server in the background, then block (up to ~30s) until it is
+            // actually accepting connections before we register the route / report success -
+            // otherwise requests land during the npm install window and get ECONNREFUSED.
+            String startCmd = "npm install && "
+                    + "nohup npm run dev -- --host 0.0.0.0 --port 5173 > /app/dev.log 2>&1 & "
+                    + "for i in $(seq 1 30); do wget -q -O /dev/null http://127.0.0.1:5173 && break; sleep 1; done";
 
             log.info("Starting dev server for project {}...", projectId);
             execCommand(podName, RUNNER_CONTAINER, "sh", "-c", startCmd);

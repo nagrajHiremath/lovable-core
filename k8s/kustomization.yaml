@@ -25,7 +25,7 @@ resources:
   - services/lovable-ui.yaml
 
   # Reverse proxy
-  - reverse-proxy/proxy-deployment.yaml
+  - services/proxy-deployment.yaml
 
 # Generate secrets from .env file
 secretGenerator:
