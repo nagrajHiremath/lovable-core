@@ -16,7 +16,7 @@ spring:
       chat:
         options:
           #          model: x-ai/grok-code-fast-1
-          model: google/gemma-4-26b-a4b-it:free
+          model: openai/gpt-4o-mini
           temperature: 0.0
 
 ---
@@ -36,5 +36,5 @@ spring:
       chat:
         options:
           #          model: x-ai/grok-code-fast-1
-          model: google/gemma-4-26b-a4b-it:free
+          model: openai/gpt-4o-mini
           temperature: 0.0
