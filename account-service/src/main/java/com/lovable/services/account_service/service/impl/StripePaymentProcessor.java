@@ -42,8 +42,8 @@ public class StripePaymentProcessor implements PaymentProcessor {
   private final UserRepository userRepository;
   private final SubscriptionService subscriptionService;
 
-//  @Value("${client.url}")
-  private String frontEndUrl = "/";
+  @Value("${app.frontend.url}")
+  private String frontEndUrl;
 
   @Override
   public CheckoutResponse createCheckoutSessionUrl(CheckoutRequest checkoutRequest) {
@@ -67,8 +67,8 @@ public class StripePaymentProcessor implements PaymentProcessor {
                             .setType(SessionCreateParams.SubscriptionData.BillingMode.Type.FLEXIBLE)
                             .build())
                     .build())
-            .setSuccessUrl(frontEndUrl + "/success.html?session_id={CHECKOUT_SESSION_ID}")
-            .setCancelUrl(frontEndUrl + "/cancel.html")
+            .setSuccessUrl(frontEndUrl + "/projects?checkout=success&session_id={CHECKOUT_SESSION_ID}")
+            .setCancelUrl(frontEndUrl + "/projects?checkout=cancelled")
             .putMetadata("user_id", user.getId().toString())
             .putMetadata("plan_id", plan.getId().toString());
 

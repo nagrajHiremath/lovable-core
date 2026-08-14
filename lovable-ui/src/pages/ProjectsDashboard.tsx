@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Plus, LogOut, Search, Folder, Loader2, MoreVertical, Trash, Download, Edit, Sparkles, FolderPlus, ArrowUpRight, Clock, LayoutGrid, CreditCard, Zap, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 
 export function ProjectsDashboard() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { toast } = useToast();
     const [projects, setProjects] = useState<ProjectSummaryResponse[]>([]);
     const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
@@ -36,6 +37,23 @@ export function ProjectsDashboard() {
     useEffect(() => {
         fetchProjectsAndSubscription();
     }, []);
+
+    // Handle the redirect back from Stripe Checkout
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const checkout = params.get("checkout");
+        if (!checkout) return;
+
+        if (checkout === "success") {
+            toast({ title: "Subscription activated", description: "Your plan has been updated." });
+            fetchProjectsAndSubscription();
+        } else if (checkout === "cancelled") {
+            toast({ title: "Checkout cancelled", description: "No changes were made to your subscription." });
+        }
+
+        navigate(location.pathname, { replace: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.search]);
 
     const fetchProjectsAndSubscription = async () => {
         try {

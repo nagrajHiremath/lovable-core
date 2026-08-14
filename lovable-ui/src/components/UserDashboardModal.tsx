@@ -49,7 +49,7 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
       ]);
       setProfile(profData);
       setSubscription(subData);
-      setPlans(planData);
+      setPlans(planData || []);
     } catch (error) {
       console.error("Failed to load account dashboard data:", error);
     } finally {

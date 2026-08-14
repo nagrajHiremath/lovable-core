@@ -45,7 +45,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                     SubscriptionStatus.ACTIVE,
                     SubscriptionStatus.TRIALING,
                     SubscriptionStatus.PAST_DUE))
-            .orElseThrow();
+            .orElse(null);
 
     return subscriptionMapper.toSubscriptionResponse(subscription);
   }
