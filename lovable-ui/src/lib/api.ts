@@ -2,7 +2,11 @@ import { ChatMessage, DeployResponse, FileNode, LoginCredentials, LoginResponse,
 export type { FileNode } from "./types";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-const ACCOUNT_BASE_URL = (import.meta.env.VITE_ACCOUNT_API_BASE_URL || "http://localhost:9050/account").replace(/\/$/, "");
+// Falls back to the gateway route (same pattern as buildApiUrl's own default of "")
+// rather than a hardcoded localhost URL - that default only ever worked for local
+// dev (where .env.local overrides it anyway) and silently broke every account-
+// service call in any deployment that didn't set VITE_ACCOUNT_API_BASE_URL.
+const ACCOUNT_BASE_URL = (import.meta.env.VITE_ACCOUNT_API_BASE_URL || `${API_BASE_URL}/api/v1/account`).replace(/\/$/, "");
 
 const buildApiUrl = (path: string) => `${API_BASE_URL}${path}`;
 const buildAccountUrl = (path: string) => `${ACCOUNT_BASE_URL}${path}`;
