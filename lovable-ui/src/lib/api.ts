@@ -318,7 +318,12 @@ export const api = {
       });
 
       if (response.ok) {
-        return response.json();
+        // A user with no active subscription (i.e. every free-tier user) gets a
+        // 200 with an empty body from the backend rather than a literal JSON
+        // "null" - .json() throws "Unexpected end of JSON input" on that, so
+        // read as text first and only parse if there's actually something there.
+        const text = await response.text();
+        return text ? JSON.parse(text) : null;
       }
     } catch {
       // Fallthrough
@@ -334,7 +339,9 @@ export const api = {
       });
 
       if (response.ok) {
-        return response.json();
+        // Must be awaited here, not just returned, or a rejection (e.g. bad JSON)
+        // bypasses this catch entirely and propagates uncaught to the caller.
+        return await response.json();
       }
     } catch {
       // Fallthrough
@@ -599,7 +606,9 @@ export const api = {
       });
 
       if (response.ok) {
-        return response.json();
+        // Same "must await inside try or the catch below is a no-op" reasoning
+        // as getMySubscription/getPlans above.
+        return await response.json();
       }
     } catch {
       // Fallthrough
