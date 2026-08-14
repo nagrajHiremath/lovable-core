@@ -163,6 +163,16 @@ function MessageItem({ message, isStreaming }: { message: ChatMessage, isStreami
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Placeholder while the model is working (e.g. reading/editing files) but
+                hasn't emitted any visible text yet - otherwise the bubble stays empty
+                for however long tool calls take, which looks identical to a stall. */}
+            {isStreaming && eventsToRender.length === 0 && (
+              <div className="flex items-center gap-2 text-muted-foreground text-[13px] font-normal">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Working...</span>
+              </div>
+            )}
+
             {/* Render granular events (Thought, Tool, Message, File) */}
             <div className="flex flex-col gap-3">
               {eventsToRender.map((event, idx) => {

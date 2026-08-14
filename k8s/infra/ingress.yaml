@@ -9,6 +9,12 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # Required for SSE (/chat/stream): without this nginx buffers the whole
+    # upstream response before forwarding it, which breaks/aborts the
+    # connection to the browser once the response exceeds its buffer size -
+    # small chat replies fit and work, larger streamed responses (file
+    # reads/edits) don't and the fetch dies mid-stream.
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
 spec:
   ingressClassName: "nginx"
   rules:
