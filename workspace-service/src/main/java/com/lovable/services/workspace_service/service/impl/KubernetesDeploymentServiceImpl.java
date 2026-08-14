@@ -40,6 +40,10 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
     private static final String BUSY = "busy";
     private static final String SYNCER_CONTAINER = "syncer";
     private static final String RUNNER_CONTAINER = "runner";
+    private static final long DEFAULT_EXEC_TIMEOUT = 30L;
+    // npm install (no cache, on a resource-limited pod) plus up to a 60s connectivity
+    // wait loop can comfortably exceed 30s - give this one real headroom.
+    private static final long DEV_SERVER_START_TIMEOUT = 150L;
 
     @Override
     public DeployResponse deploy(Long projectId) {
@@ -112,15 +116,18 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
             execCommand(podName, SYNCER_CONTAINER, "sh", "-c", watchCmd);
 
             // Runner Commands
-            // Start the dev server in the background, then block (up to ~30s) until it is
-            // actually accepting connections before we register the route / report success -
+            // Start the dev server in the background, then block until it is actually
+            // accepting connections before we register the route / report success -
             // otherwise requests land during the npm install window and get ECONNREFUSED.
+            // The wait loop alone can take up to 60s, on top of however long npm install
+            // itself takes first, so this needs a much longer exec timeout than the default
+            // 30s (which is sized for quick synchronous commands, not this one).
             String startCmd = "npm install && "
                     + "nohup npm run dev -- --host 0.0.0.0 --port 5173 > /app/dev.log 2>&1 & "
-                    + "for i in $(seq 1 30); do wget -q -O /dev/null http://127.0.0.1:5173 && break; sleep 1; done";
+                    + "for i in $(seq 1 60); do wget -q -O /dev/null http://127.0.0.1:5173 && break; sleep 1; done";
 
             log.info("Starting dev server for project {}...", projectId);
-            execCommand(podName, RUNNER_CONTAINER, "sh", "-c", startCmd);
+            execCommand(podName, RUNNER_CONTAINER, DEV_SERVER_START_TIMEOUT, "sh", "-c", startCmd);
 
             registerRoute(domain, pod);
 
@@ -143,6 +150,10 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
 
 
     private void execCommand(String podName, String container, String... command) {
+        execCommand(podName, container, DEFAULT_EXEC_TIMEOUT, command);
+    }
+
+    private void execCommand(String podName, String container, long timeoutSeconds, String... command) {
         log.debug("Exec in {}:{} -> {}", podName, container, String.join(" ", command));
 
         CompletableFuture<String> data = new CompletableFuture<>();
@@ -163,7 +174,7 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
             if (command[command.length - 1].trim().endsWith("&")) {
                 Thread.sleep(500);
             } else {
-                data.get(30, TimeUnit.SECONDS); // Block for synchronous setup commands (npm install)
+                data.get(timeoutSeconds, TimeUnit.SECONDS); // Block for synchronous setup commands (npm install)
             }
 
         } catch (Exception e) {
