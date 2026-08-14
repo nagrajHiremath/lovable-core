@@ -1,21 +1,29 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { api, getUserInfo } from "@/lib/api";
 import { UserProfileResponse, SubscriptionResponse, PlanResponse } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  User, 
-  CreditCard, 
-  Zap, 
-  CheckCircle2, 
-  ExternalLink, 
-  Loader2, 
-  Sparkles, 
-  ShieldCheck, 
-  Clock, 
+import {
+  User,
+  Zap,
+  CheckCircle2,
+  ExternalLink,
+  Loader2,
+  Sparkles,
+  Clock,
   FolderCheck,
   Building2
 } from "lucide-react";
@@ -32,6 +40,7 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
   const [plans, setPlans] = useState<PlanResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [planToConfirm, setPlanToConfirm] = useState<PlanResponse | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -84,13 +93,8 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
     setActionLoading(`checkout-${planId}`);
     try {
       const { url } = await api.createCheckoutSession(planId);
-      if (url && url !== "https://stripe.com") {
+      if (url) {
         window.location.href = url;
-      } else {
-        toast({
-          title: "Checkout Session Created",
-          description: `Checkout session for Plan #${planId} initialized.`,
-        });
       }
     } catch (error) {
       toast({
@@ -100,6 +104,7 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
       });
     } finally {
       setActionLoading(null);
+      setPlanToConfirm(null);
     }
   };
 
@@ -107,7 +112,9 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
   const name = profile?.name || localUser?.name || localUser?.username?.split("@")[0] || "Authenticated User";
   const username = profile?.username || localUser?.username || "";
 
-  const currentPlan = subscription?.plan;
+  // Free users have no subscription row at all, so fall back to the seeded
+  // "Free" plan's real limits instead of showing generic placeholder text.
+  const currentPlan = subscription?.plan || plans.find((p) => p.name === "Free");
   const tokensUsed = subscription?.tokensUsedThisCycle || 0;
   const maxTokens = currentPlan?.maxTokensPerDay || 0;
   const tokenPercentage = maxTokens > 0 ? Math.min(100, Math.round((tokensUsed / maxTokens) * 100)) : 0;
@@ -120,14 +127,9 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF6A5C] via-[#E056A7] to-[#7C4DFF] text-white shadow-lg">
               <User className="h-6 w-6" />
             </div>
-            <div>
-              <DialogTitle className="text-2xl font-bold tracking-tight text-white">
-                Account & Subscription Dashboard
-              </DialogTitle>
-              <DialogDescription className="text-slate-400 text-sm">
-                Manage your user profile, AI token limits, and subscription billing plans.
-              </DialogDescription>
-            </div>
+            <DialogTitle className="text-2xl font-bold tracking-tight text-white">
+              Account
+            </DialogTitle>
           </div>
         </DialogHeader>
 
@@ -145,12 +147,7 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
                   {name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-white">{name}</h3>
-                    <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">
-                      <ShieldCheck className="h-3 w-3 mr-1" /> Active Account
-                    </Badge>
-                  </div>
+                  <h3 className="text-lg font-bold text-white">{name}</h3>
                   {username && <p className="text-sm text-slate-400">{username}</p>}
                 </div>
               </div>
@@ -235,16 +232,14 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
 
             {/* Plans Comparison Grid */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-pink-400" />
-                  Available Subscription Plans
-                </h4>
-              </div>
+              <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-pink-400" />
+                Plans
+              </h4>
 
               {plans.length === 0 ? (
                 <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center text-slate-400 text-sm">
-                  No subscription plans currently published by backend API (`GET /api/plan`).
+                  No plans available right now.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -291,7 +286,7 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
                             </Button>
                           ) : (
                             <Button
-                              onClick={() => handleCheckout(plan.id)}
+                              onClick={() => setPlanToConfirm(plan)}
                               disabled={actionLoading === `checkout-${plan.id}`}
                               className="w-full rounded-xl bg-gradient-to-r from-[#FF6A5C] via-[#E056A7] to-[#7C4DFF] text-white font-semibold hover:opacity-90 transition"
                             >
@@ -312,6 +307,40 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
           </div>
         )}
       </DialogContent>
+
+      <AlertDialog open={!!planToConfirm} onOpenChange={(open) => !open && setPlanToConfirm(null)}>
+        <AlertDialogContent className="border-white/10 bg-slate-950/95 text-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              Subscribe to {planToConfirm?.name}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              {planToConfirm && (
+                <span className="block space-y-1">
+                  <span className="block text-2xl font-extrabold text-pink-400">{planToConfirm.price}/mo</span>
+                  <span className="block">
+                    Up to {planToConfirm.maxProjects} projects, {planToConfirm.maxTokensPerDay.toLocaleString()} tokens/day
+                    {planToConfirm.unlimitedAi ? ", unlimited AI generation" : ""}.
+                  </span>
+                  <span className="block">You'll be redirected to Stripe to complete payment.</span>
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => planToConfirm && handleCheckout(planToConfirm.id)}
+              disabled={!!actionLoading}
+              className="rounded-xl bg-gradient-to-r from-[#FF6A5C] via-[#E056A7] to-[#7C4DFF] text-white hover:opacity-90"
+            >
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continue to checkout"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

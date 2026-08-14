@@ -47,7 +47,7 @@ export function ProjectView() {
   // Check authentication
   useEffect(() => {
     if (!isAuthenticated()) {
-      navigate("/login");
+      navigate("/");
     }
   }, [navigate]);
 
@@ -90,7 +90,7 @@ export function ProjectView() {
   const handleLogout = () => {
     removeAuthToken();
     removeUserInfo();
-    navigate("/login");
+    navigate("/");
   };
 
   const handleSendMessage = useCallback((content: string) => {

@@ -59,7 +59,7 @@ const Index = () => {
                 <Input
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type your message here..."
+                  placeholder="Describe what you want to build..."
                   className="min-w-0 flex-1 border-0 bg-transparent px-4 text-sm text-white placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
