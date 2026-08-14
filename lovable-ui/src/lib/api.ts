@@ -560,28 +560,6 @@ export const api = {
           }
         };
 
-        // Re-running extractFiles() (a full regex scan over the whole accumulated
-        // buffer) and pushing a React state update on every single SSE chunk is O(n^2)
-        // as the response grows - fine for a short reply, but for a multi-KB file
-        // edit it falls far enough behind that the stream visibly stalls even though
-        // data is still arriving. Batch chunks and flush at most once per frame.
-        let pendingChunk = "";
-        let flushScheduled = false;
-
-        const flushPending = () => {
-          flushScheduled = false;
-          if (!pendingChunk) return;
-          onChunk(pendingChunk);
-          pendingChunk = "";
-          extractFiles();
-        };
-
-        const scheduleFlush = () => {
-          if (flushScheduled) return;
-          flushScheduled = true;
-          requestAnimationFrame(flushPending);
-        };
-
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -605,18 +583,20 @@ export const api = {
               const parsed = JSON.parse(dataStr);
               const content = parsed.text;
 
-              // Accumulate for both the UI text and file-tag parsing; flushed in batches.
+              // 1. Send clean text to UI
+              onChunk(content);
+
+              // 2. Accumulate for file parsing and extract any newly-completed <file> tags
               fullContentBuffer += content;
-              pendingChunk += content;
-              scheduleFlush();
+              extractFiles();
             } catch (e) {
               console.error("Failed to parse SSE JSON:", e);
             }
           }
         }
 
-        // Final flush in case the last batch never got a chance to run via rAF
-        flushPending();
+        // Final pass in case the last chunk closed a file tag without a trailing chunk
+        extractFiles();
         onComplete();
       })
       .catch((error) => {
