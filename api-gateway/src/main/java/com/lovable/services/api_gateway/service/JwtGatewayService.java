@@ -1,5 +1,7 @@
 package com.lovable.services.api_gateway.service;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,9 +19,16 @@ public class JwtGatewayService {
     public void validateToken(String token) {
         SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
 
-        Jwts.parser()
+        Claims claims = Jwts.parser()
                 .verifyWith(key)
                 .build()
-                .parseSignedClaims(token);
+                .parseSignedClaims(token)
+                .getPayload();
+
+        // Refresh tokens must only be usable against /auth/refresh, never as a
+        // regular API bearer token.
+        if (!"access".equals(claims.get("type", String.class))) {
+            throw new JwtException("Not an access token");
+        }
     }
 }

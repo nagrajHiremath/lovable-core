@@ -2,6 +2,7 @@ package com.lovable.services.account_service.controller;
 
 import com.lovable.services.account_service.dto.auth.AuthResponse;
 import com.lovable.services.account_service.dto.auth.LoginRequest;
+import com.lovable.services.account_service.dto.auth.RefreshRequest;
 import com.lovable.services.account_service.dto.auth.SignUpRequest;
 import com.lovable.services.account_service.service.AuthService;
 import com.lovable.services.common_lib.dto.UserProfileResponse;
@@ -24,6 +25,11 @@ public class AuthController {
   @PostMapping("/login")
   public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest) {
     return ResponseEntity.ok(authService.login(loginRequest));
+  }
+
+  @PostMapping("/refresh")
+  public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshRequest refreshRequest) {
+    return ResponseEntity.ok(authService.refresh(refreshRequest));
   }
 
   @GetMapping("/profile")

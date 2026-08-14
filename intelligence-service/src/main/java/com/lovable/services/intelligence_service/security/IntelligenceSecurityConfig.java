@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -20,6 +21,10 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration
 @EnableWebSecurity
+// proxyTargetClass=true because @PreAuthorize lives on AiGenerationServiceImpl (the
+// class), not on the AiGenerationService interface it implements - the default
+// JDK interface-based proxy would silently never see/enforce that annotation.
+@EnableMethodSecurity(proxyTargetClass = true)
 @RequiredArgsConstructor
 public class IntelligenceSecurityConfig {
 

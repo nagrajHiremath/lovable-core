@@ -2,6 +2,7 @@ package com.lovable.services.common_lib.security;
 
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,13 +27,17 @@ public class AuthUtil {
     return Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
   }
 
+  private static final long ACCESS_TOKEN_TTL_MS = 1000L * 60 * 15; // 15 minutes
+  private static final long REFRESH_TOKEN_TTL_MS = 1000L * 60 * 60 * 24 * 7; // 7 days
+
   public String generateAccessToken(JwtUserPrincipal user) {
     return Jwts.builder()
         .subject(user.getUsername())
         .claim("id", user.userId())
-            .claim("name", user.name())
+        .claim("name", user.name())
+        .claim("type", "access")
         .issuedAt(new Date())
-        .expiration(new Date(System.currentTimeMillis() + 1000 * 600))
+        .expiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_TTL_MS))
         .signWith(getSecretKey())
         .compact();
   }
@@ -42,8 +47,9 @@ public class AuthUtil {
         .subject(user.getUsername())
         .claim("id", user.userId())
         .claim("name", user.name())
+        .claim("type", "refresh")
         .issuedAt(new Date())
-        .expiration(new Date(System.currentTimeMillis() + 1000 * 60))
+        .expiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_TTL_MS))
         .signWith(getSecretKey())
         .compact();
   }
@@ -51,6 +57,25 @@ public class AuthUtil {
   public JwtUserPrincipal verifyToken(String token) {
     Claims claims =
         Jwts.parser().verifyWith(getSecretKey()).build().parseSignedClaims(token).getPayload();
+
+    if (!"access".equals(claims.get("type", String.class))) {
+      throw new JwtException("Not an access token");
+    }
+
+    Long id = claims.get("id", Long.class);
+    String name = claims.get("name", String.class);
+    String username = claims.getSubject();
+
+    return new JwtUserPrincipal(id, name, username, null, new ArrayList<>());
+  }
+
+  public JwtUserPrincipal verifyRefreshToken(String token) {
+    Claims claims =
+        Jwts.parser().verifyWith(getSecretKey()).build().parseSignedClaims(token).getPayload();
+
+    if (!"refresh".equals(claims.get("type", String.class))) {
+      throw new JwtException("Not a refresh token");
+    }
 
     Long id = claims.get("id", Long.class);
     String name = claims.get("name", String.class);

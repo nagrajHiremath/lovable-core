@@ -11,4 +11,5 @@ public record ProjectResponse(
     Instant createdAt,
     Instant updatedAt,
     Instant deletedAt,
-    ProjectRole role) {}
+    ProjectRole role,
+    Boolean isPublic) {}

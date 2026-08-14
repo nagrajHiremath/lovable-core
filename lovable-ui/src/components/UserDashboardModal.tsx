@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { api, getUserInfo } from "@/lib/api";
-import { UserProfileResponse, SubscriptionResponse, PlanResponse } from "@/lib/types";
+import { UserProfileResponse, SubscriptionResponse, PlanResponse, TokenUsageResponse } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import {
   User,
@@ -38,6 +38,7 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
   const [plans, setPlans] = useState<PlanResponse[]>([]);
+  const [usage, setUsage] = useState<TokenUsageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [planToConfirm, setPlanToConfirm] = useState<PlanResponse | null>(null);
@@ -51,14 +52,16 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
   const loadData = async () => {
     setLoading(true);
     try {
-      const [profData, subData, planData] = await Promise.all([
+      const [profData, subData, planData, usageData] = await Promise.all([
         api.getCurrentProfile(),
         api.getMySubscription(),
         api.getPlans(),
+        api.getTokenUsage(),
       ]);
       setProfile(profData);
       setSubscription(subData);
       setPlans(planData || []);
+      setUsage(usageData);
     } catch (error) {
       console.error("Failed to load account dashboard data:", error);
     } finally {
@@ -70,13 +73,8 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
     setActionLoading("portal");
     try {
       const { portalUrl } = await api.openCustomerPortal();
-      if (portalUrl && portalUrl !== "https://stripe.com") {
+      if (portalUrl) {
         window.location.href = portalUrl;
-      } else {
-        toast({
-          title: "Billing Portal Opened",
-          description: "Stripe Customer Portal endpoint triggered successfully.",
-        });
       }
     } catch (error) {
       toast({
@@ -115,8 +113,12 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
   // Free users have no subscription row at all, so fall back to the seeded
   // "Free" plan's real limits instead of showing generic placeholder text.
   const currentPlan = subscription?.plan || plans.find((p) => p.name === "Free");
-  const tokensUsed = subscription?.tokensUsedThisCycle || 0;
-  const maxTokens = currentPlan?.maxTokensPerDay || 0;
+
+  // Real daily usage comes from intelligence-service (per-user usage_log), not
+  // Subscription.tokensUsedThisCycle - that field is never actually populated.
+  const tokensUsed = usage?.tokensUsedToday || 0;
+  const maxTokens = usage?.maxTokensPerDay || currentPlan?.maxTokensPerDay || 0;
+  const isUnlimitedAi = usage?.unlimitedAi ?? currentPlan?.unlimitedAi ?? false;
   const tokenPercentage = maxTokens > 0 ? Math.min(100, Math.round((tokensUsed / maxTokens) * 100)) : 0;
 
   return (
@@ -215,17 +217,19 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
               </div>
 
               {/* Token Usage Progress */}
-              {maxTokens > 0 && (
+              {usage && (
                 <div className="space-y-2 pt-2">
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-400 flex items-center gap-1">
-                      <Zap className="h-3.5 w-3.5 text-pink-400" /> Daily AI Token Consumption
+                      <Zap className="h-3.5 w-3.5 text-pink-400" /> Daily AI Token Usage
                     </span>
                     <span className="font-semibold text-white">
-                      {tokensUsed.toLocaleString()} / {maxTokens.toLocaleString()} Tokens ({tokenPercentage}%)
+                      {isUnlimitedAi
+                        ? `${tokensUsed.toLocaleString()} tokens used today`
+                        : `${tokensUsed.toLocaleString()} / ${maxTokens.toLocaleString()} tokens (${tokenPercentage}%)`}
                     </span>
                   </div>
-                  <Progress value={tokenPercentage} className="h-2.5 bg-white/10" />
+                  {!isUnlimitedAi && <Progress value={tokenPercentage} className="h-2.5 bg-white/10" />}
                 </div>
               )}
             </div>

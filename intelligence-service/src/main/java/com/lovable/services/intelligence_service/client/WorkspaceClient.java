@@ -16,8 +16,9 @@ public interface WorkspaceClient {
     @GetMapping("/projects/{projectId}/files/content")
     String getFileContent(@PathVariable("projectId") Long projectId, @RequestParam("path") String path);
 
-    @GetMapping("/projects/{projectId}/permissions/check")
+    @GetMapping("/internal/v1/projects/{projectId}/permissions/check")
     boolean checkPermission(
             @PathVariable("projectId") Long projectId,
+            @RequestParam("userId") Long userId,
             @RequestParam("permission") ProjectPermission permission);
 }

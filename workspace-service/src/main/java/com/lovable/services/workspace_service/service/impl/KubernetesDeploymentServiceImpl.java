@@ -13,6 +13,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -53,6 +54,31 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
         }
 
         return claimAndStartNewPod(projectId, domain);
+    }
+
+    @Override
+    public String getPreviewUrl(Long projectId) {
+        String domain = "project-" + projectId + baseDomain;
+        return "http://" + domain + ":" + proxyPort;
+    }
+
+    @Override
+    public void releasePod(Long projectId) {
+        List<Pod> pods = client.pods().inNamespace(namespace)
+                .withLabel(PROJECT_LABEL, projectId.toString())
+                .list().getItems();
+
+        for (Pod pod : pods) {
+            String podName = pod.getMetadata().getName();
+            log.info("Releasing pod {} for deleted project {}", podName, projectId);
+            // Deleting (rather than relabeling back to idle) is simplest and safe: it drops
+            // below the runner-pool Deployment's desired replica count, so a fresh clean
+            // idle pod gets spun up automatically to replace it.
+            client.pods().inNamespace(namespace).withName(podName).delete();
+        }
+
+        String domain = "project-" + projectId + baseDomain;
+        redisTemplate.delete("route:" + domain);
     }
 
     private DeployResponse claimAndStartNewPod(Long projectId, String domain) {

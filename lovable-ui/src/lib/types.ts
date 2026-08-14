@@ -70,10 +70,22 @@ export interface ProjectResponse {
   role?: ProjectRole; // Added to check user's permission in the project
   createdAt: string;
   updatedAt?: string;
+  isPublic?: boolean;
 }
 
 export interface ProjectRequest {
   name: string;
+}
+
+export interface ProjectUpdateRequest {
+  name?: string;
+  isPublic?: boolean;
+}
+
+export interface PublicProjectResponse {
+  id: number;
+  name: string;
+  previewUrl: string;
 }
 
 export type ProjectRole = 'OWNER' | 'DEVELOPER' | 'VIEWER';
@@ -113,6 +125,7 @@ export interface SignupRequest {
 
 export interface AuthResponse {
   token: string;
+  refreshToken?: string;
   userProfileResponse?: UserProfileResponse;
   user?: {
     id?: number;
@@ -140,6 +153,12 @@ export interface SubscriptionResponse {
 
 export interface CheckoutRequest {
   planId: number;
+}
+
+export interface TokenUsageResponse {
+  tokensUsedToday: number;
+  maxTokensPerDay: number;
+  unlimitedAi: boolean;
 }
 
 export interface CheckoutResponse {

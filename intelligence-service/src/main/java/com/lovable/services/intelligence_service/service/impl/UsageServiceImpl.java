@@ -3,6 +3,7 @@ package com.lovable.services.intelligence_service.service.impl;
 import com.lovable.services.common_lib.dto.PlanResponse;
 import com.lovable.services.common_lib.security.AuthUtil;
 import com.lovable.services.intelligence_service.client.AccountClient;
+import com.lovable.services.intelligence_service.dto.UsageTodayResponse;
 import com.lovable.services.intelligence_service.entity.UsageLog;
 import com.lovable.services.intelligence_service.repository.UsageLogRepository;
 import com.lovable.services.intelligence_service.service.UsageService;
@@ -21,13 +22,21 @@ public class UsageServiceImpl implements UsageService {
   private final AuthUtil authUtil;
   private final AccountClient accountClient;
 
-//  public UsageTodayResponse getTodayUsage() {
-//    return null;
-//  }
-//
-//  public PlanLimitResponse getPlanLimit() {
-//    return null;
-//  }
+  @Override
+  public UsageTodayResponse getTodayUsage() {
+    Long userId = authUtil.getCurrentUserId();
+    LocalDate today = LocalDate.now();
+
+    int tokensUsedToday =
+        usageLogRepository
+            .findByUserIdAndDate(userId, today)
+            .map(UsageLog::getTokensUsed)
+            .orElse(0);
+
+    PlanResponse plan = accountClient.getCurrentSubscribedPlanByUser(userId);
+
+    return new UsageTodayResponse(tokensUsedToday, plan.maxTokensPerDay(), plan.unlimitedAi());
+  }
 
   @Override
   public void recordTokenUsage(Long userId, int totalTokens) {
@@ -44,7 +53,7 @@ public class UsageServiceImpl implements UsageService {
   public void checkDailyTokensUsage() {
 
     Long userId = authUtil.getCurrentUserId();
-    PlanResponse plan = accountClient.getCurrentSubscribedPlanByUser();
+    PlanResponse plan = accountClient.getCurrentSubscribedPlanByUser(userId);
 
     LocalDate today = LocalDate.now();
 

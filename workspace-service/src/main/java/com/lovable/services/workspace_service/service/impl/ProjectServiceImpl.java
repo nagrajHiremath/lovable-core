@@ -12,9 +12,12 @@ import com.lovable.services.workspace_service.entity.ProjectMemberId;
 import com.lovable.services.workspace_service.mapper.ProjectMapper;
 import com.lovable.services.workspace_service.repository.ProjectMemberRepository;
 import com.lovable.services.workspace_service.repository.ProjectRepository;
+import com.lovable.services.workspace_service.service.DeploymentService;
+import com.lovable.services.workspace_service.service.ProjectFileService;
 import com.lovable.services.workspace_service.service.ProjectService;
 import com.lovable.services.workspace_service.service.ProjectTemplateService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -22,12 +25,15 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProjectServiceImpl implements ProjectService {
   private final ProjectRepository projectRepository;
   private final ProjectMapper projectMapper;
   private final ProjectMemberRepository projectMemberRepository;
   private final AuthUtil authUtil;
   private final ProjectTemplateService projectTemplateService;
+  private final DeploymentService deploymentService;
+  private final ProjectFileService projectFileService;
 
   public ProjectResponse createProject(ProjectRequest projectRequest) {
 
@@ -55,7 +61,7 @@ public class ProjectServiceImpl implements ProjectService {
     ProjectResponse response = projectMapper.toProjectResponse(project);
     return new ProjectResponse(
         response.id(), response.name(), response.userId(), response.createdAt(),
-        response.updatedAt(), response.deletedAt(), ProjectRole.OWNER);
+        response.updatedAt(), response.deletedAt(), ProjectRole.OWNER, response.isPublic());
   }
 
   public List<ProjectSummaryResponse> getUserProjects() {
@@ -80,7 +86,7 @@ public class ProjectServiceImpl implements ProjectService {
             .orElse(null);
     return new ProjectResponse(
         response.id(), response.name(), response.userId(), response.createdAt(),
-        response.updatedAt(), response.deletedAt(), role);
+        response.updatedAt(), response.deletedAt(), role, response.isPublic());
   }
 
   public ProjectResponse updateProject(Long id, ProjectUpdateRequest projectUpdateRequest) {
@@ -96,5 +102,19 @@ public class ProjectServiceImpl implements ProjectService {
     project.setDeletedAt(Instant.now());
 
     projectRepository.save(project);
+
+    // Best-effort cleanup: don't let a K8s/MinIO hiccup stop the project from
+    // being (soft-)deleted, which is the part the user actually sees.
+    try {
+      deploymentService.releasePod(id);
+    } catch (Exception e) {
+      log.error("Failed to release runner pod for deleted project {}", id, e);
+    }
+
+    try {
+      projectFileService.deleteProjectFiles(id);
+    } catch (Exception e) {
+      log.error("Failed to delete MinIO files for deleted project {}", id, e);
+    }
   }
 }

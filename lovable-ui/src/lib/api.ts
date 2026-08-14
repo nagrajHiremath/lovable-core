@@ -1,4 +1,4 @@
-import { ChatMessage, DeployResponse, FileNode, LoginCredentials, LoginResponse, ProjectSummaryResponse, ProjectRequest, ProjectResponse, ProjectMember, ProjectRole, MemberResponseDto, SignupRequest, AuthResponse, UserProfileResponse, PlanResponse, SubscriptionResponse, CheckoutResponse, PortalResponse } from "./types";
+import { ChatMessage, DeployResponse, FileNode, LoginCredentials, LoginResponse, ProjectSummaryResponse, ProjectRequest, ProjectResponse, ProjectUpdateRequest, PublicProjectResponse, ProjectMember, ProjectRole, MemberResponseDto, SignupRequest, AuthResponse, UserProfileResponse, PlanResponse, SubscriptionResponse, CheckoutResponse, PortalResponse, TokenUsageResponse } from "./types";
 export type { FileNode } from "./types";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
@@ -12,6 +12,12 @@ export const getAuthToken = () => localStorage.getItem("auth_token");
 export const setAuthToken = (token: string) => localStorage.setItem("auth_token", token);
 
 export const removeAuthToken = () => localStorage.removeItem("auth_token");
+
+export const getRefreshToken = () => localStorage.getItem("refresh_token");
+
+export const setRefreshToken = (token: string) => localStorage.setItem("refresh_token", token);
+
+export const removeRefreshToken = () => localStorage.removeItem("refresh_token");
 
 export const isAuthenticated = () => !!getAuthToken();
 
@@ -32,6 +38,18 @@ export const getUserInfo = (): { id?: number; username: string; name: string } |
 };
 
 export const removeUserInfo = () => localStorage.removeItem("user_info");
+
+// Persists the refresh token from a login/signup/refresh response, if present.
+// Centralized here so callers (HomeAuthDialog, LoginModal, etc.) don't each need
+// to remember to do it themselves.
+const persistRefreshToken = (data: AuthResponse) => {
+  if (data.refreshToken) {
+    setRefreshToken(data.refreshToken);
+    // Start the silent-refresh loop right away for a fresh login/signup - App.tsx's
+    // mount-time call only covers the "already had a session, reloaded the page" case.
+    startSessionRefreshLoop();
+  }
+};
 
 // LocalStorage keys
 export const PREVIEW_URL_KEY = "preview_url";
@@ -124,6 +142,7 @@ export const api = {
         } else {
           setUserInfo({ username: credentials.username, name: credentials.username.split("@")[0] });
         }
+        persistRefreshToken(data);
         return data;
       }
     } catch {
@@ -148,6 +167,7 @@ export const api = {
     } else {
       setUserInfo({ username: credentials.username, name: credentials.username.split("@")[0] });
     }
+    persistRefreshToken(data);
     return data;
   },
 
@@ -167,6 +187,7 @@ export const api = {
         } else {
           setUserInfo({ username: data.username, name: data.name || data.username.split("@")[0] });
         }
+        persistRefreshToken(resData);
         return resData;
       }
     } catch {
@@ -191,7 +212,30 @@ export const api = {
     } else {
       setUserInfo({ username: data.username, name: data.name || data.username.split("@")[0] });
     }
+    persistRefreshToken(resData);
     return resData;
+  },
+
+  async refreshToken(): Promise<AuthResponse> {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      throw new Error("No refresh token available");
+    }
+
+    const response = await fetch(buildAccountUrl("/auth/refresh"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to refresh session");
+    }
+
+    const data: AuthResponse = await response.json();
+    setAuthToken(data.token);
+    persistRefreshToken(data);
+    return data;
   },
 
   async getCurrentProfile(): Promise<UserProfileResponse> {
@@ -412,15 +456,25 @@ export const api = {
     return response.json();
   },
 
-  async updateProject(id: string, name: string): Promise<ProjectResponse> {
+  async updateProject(id: string, updates: ProjectUpdateRequest): Promise<ProjectResponse> {
     const response = await fetch(buildApiUrl(`/api/v1/workspace/projects/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(updates),
     });
 
     if (!response.ok) {
       throw new Error("Failed to update project");
+    }
+
+    return response.json();
+  },
+
+  async getPublicProject(id: string): Promise<PublicProjectResponse> {
+    const response = await fetch(buildApiUrl(`/api/v1/workspace/public/projects/${id}`));
+
+    if (!response.ok) {
+      throw new Error("Project not found or not public");
     }
 
     return response.json();
@@ -502,6 +556,22 @@ export const api = {
     if (!response.ok) {
       throw new Error("Failed to remove member");
     }
+  },
+
+  async getTokenUsage(): Promise<TokenUsageResponse | null> {
+    try {
+      const response = await fetch(buildApiUrl("/api/v1/intelligence/usage/today"), {
+        headers: { ...getAuthHeaders() },
+      });
+
+      if (response.ok) {
+        return response.json();
+      }
+    } catch {
+      // Fallthrough
+    }
+
+    return null;
   },
 
   async getChatHistory(projectId: string): Promise<ChatMessage[]> {
@@ -609,4 +679,34 @@ export const api = {
     return () => controller.abort();
   }
 
+};
+
+// Access tokens are short-lived (15 min); silently renew them in the background
+// using the refresh token so the user isn't forced to log in again mid-session.
+// Proactive (timer-based) rather than reactive 401-interception, since api.ts has
+// ~25 independent fetch call sites and this avoids wrapping every one of them.
+const REFRESH_INTERVAL_MS = 12 * 60 * 1000; // 12 minutes, comfortably under the 15-minute access token TTL
+let refreshIntervalId: ReturnType<typeof setInterval> | null = null;
+
+export const startSessionRefreshLoop = () => {
+  if (refreshIntervalId !== null || !getRefreshToken()) return;
+
+  const tryRefresh = async () => {
+    try {
+      await api.refreshToken();
+    } catch {
+      // Refresh token expired or invalid - clear the session. The existing
+      // "not authenticated" checks (e.g. ProjectView's auth guard) will send
+      // the user back to the homepage to log in again next time they act.
+      removeAuthToken();
+      removeRefreshToken();
+      if (refreshIntervalId !== null) {
+        clearInterval(refreshIntervalId);
+        refreshIntervalId = null;
+      }
+    }
+  };
+
+  tryRefresh();
+  refreshIntervalId = setInterval(tryRefresh, REFRESH_INTERVAL_MS);
 };

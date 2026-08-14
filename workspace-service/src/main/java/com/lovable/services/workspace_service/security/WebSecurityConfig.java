@@ -37,7 +37,13 @@ public class WebSecurityConfig {
             auth -> auth
                     .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                     .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
+                        // /internal/** - service-to-service calls (e.g. intelligence-service's
+                        // project-permission check) that don't carry a forwarded JWT, matching
+                        // the same allowance account-service already has for its /internal/** .
+                        // /public/** - anonymous project-sharing endpoints; the gateway also
+                        // skips its own JWT check for these, so no Authorization header ever
+                        // reaches this filter chain for them either.
+                        .requestMatchers("/actuator/**", "/internal/**", "/public/**").permitAll()
                     .anyRequest()
                     .authenticated())
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

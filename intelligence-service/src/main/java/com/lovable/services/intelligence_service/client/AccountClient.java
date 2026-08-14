@@ -15,5 +15,5 @@ public interface AccountClient {
     Optional<UserProfileResponse> getUserByEmail(@RequestParam("email") String email);
 
     @GetMapping("/internal/v1/billing/current-plan")
-    PlanResponse getCurrentSubscribedPlanByUser();
+    PlanResponse getCurrentSubscribedPlanByUser(@RequestParam("userId") Long userId);
 }

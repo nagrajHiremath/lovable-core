@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Globe, Link as LinkIcon, Lock, Check } from "lucide-react";
+import { Globe, Link as LinkIcon, Lock } from "lucide-react";
 import { api } from "@/lib/api";
 import { ProjectMember, ProjectRole } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -12,18 +12,21 @@ import { cn } from "@/lib/utils";
 
 interface ShareDialogProps {
     projectId: string;
+    isPublic?: boolean;
+    onVisibilityChange?: (isPublic: boolean) => void;
     trigger?: React.ReactNode;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
 }
 
-export function ShareDialog({ projectId, trigger, open, onOpenChange }: ShareDialogProps) {
+export function ShareDialog({ projectId, isPublic = false, onVisibilityChange, trigger, open, onOpenChange }: ShareDialogProps) {
     const { toast } = useToast();
     const [members, setMembers] = useState<ProjectMember[]>([]);
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteRole, setInviteRole] = useState<ProjectRole>("DEVELOPER");
     const [loading, setLoading] = useState(false);
     const [internalOpen, setInternalOpen] = useState(false);
+    const [visibilityLoading, setVisibilityLoading] = useState(false);
 
     // Use controlled open state if provided, otherwise use internal state
     const isOpen = open !== undefined ? open : internalOpen;
@@ -87,6 +90,37 @@ export function ShareDialog({ projectId, trigger, open, onOpenChange }: ShareDia
         }
     };
 
+    const handleToggleVisibility = async () => {
+        const nextIsPublic = !isPublic;
+        setVisibilityLoading(true);
+        try {
+            await api.updateProject(projectId, { isPublic: nextIsPublic });
+            onVisibilityChange?.(nextIsPublic);
+
+            if (nextIsPublic) {
+                const { previewUrl } = await api.getPublicProject(projectId);
+                await navigator.clipboard.writeText(previewUrl);
+                toast({ title: "Project is now public", description: "Link copied to clipboard." });
+            } else {
+                toast({ title: "Project is now private" });
+            }
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to update project visibility.", variant: "destructive" });
+        } finally {
+            setVisibilityLoading(false);
+        }
+    };
+
+    const handleCopyPublicLink = async () => {
+        try {
+            const { previewUrl } = await api.getPublicProject(projectId);
+            await navigator.clipboard.writeText(previewUrl);
+            toast({ title: "Link copied to clipboard" });
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to fetch public link.", variant: "destructive" });
+        }
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
@@ -124,6 +158,41 @@ export function ShareDialog({ projectId, trigger, open, onOpenChange }: ShareDia
                                 <SelectItem value="OWNER">Owner</SelectItem>
                             </SelectContent>
                         </Select>
+                    </div>
+
+                    {/* Public Access */}
+                    <div className="flex items-center justify-between gap-3 p-3 mb-6 rounded-lg bg-muted/30 border border-border/50">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            {isPublic ? (
+                                <Globe className="h-4 w-4 text-primary shrink-0" />
+                            ) : (
+                                <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+                            )}
+                            <div className="min-w-0">
+                                <div className="text-sm font-medium">
+                                    {isPublic ? "Anyone with the link" : "Private"}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                    {isPublic ? "Anyone can view the live preview" : "Only invited people can access"}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            {isPublic && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyPublicLink}>
+                                    <LinkIcon className="h-4 w-4" />
+                                </Button>
+                            )}
+                            <Button
+                                variant={isPublic ? "secondary" : "outline"}
+                                size="sm"
+                                className="h-8 text-xs"
+                                disabled={visibilityLoading}
+                                onClick={handleToggleVisibility}
+                            >
+                                {isPublic ? "Make private" : "Make public"}
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Members List */}

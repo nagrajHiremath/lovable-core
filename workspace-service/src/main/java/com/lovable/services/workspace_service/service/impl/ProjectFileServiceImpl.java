@@ -10,8 +10,12 @@ import com.lovable.services.workspace_service.repository.ProjectFileRepository;
 import com.lovable.services.workspace_service.repository.ProjectRepository;
 import com.lovable.services.workspace_service.service.ProjectFileService;
 import io.minio.GetObjectArgs;
+import io.minio.ListObjectsArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
+import io.minio.Result;
+import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -132,6 +136,33 @@ public class ProjectFileServiceImpl implements ProjectFileService {
     }
 
     return byteArrayOutputStream.toByteArray();
+  }
+
+  @Override
+  public void deleteProjectFiles(Long projectId) {
+    String prefix = projectId + "/";
+
+    Iterable<Result<Item>> objects = minioClient.listObjects(
+        ListObjectsArgs.builder()
+            .bucket(projectBucket)
+            .prefix(prefix)
+            .recursive(true)
+            .build());
+
+    for (Result<Item> result : objects) {
+      try {
+        String objectName = result.get().objectName();
+        minioClient.removeObject(
+            RemoveObjectArgs.builder()
+                .bucket(projectBucket)
+                .object(objectName)
+                .build());
+      } catch (Exception e) {
+        log.error("Failed to delete an object for project {}", projectId, e);
+      }
+    }
+
+    projectFileRepository.deleteAll(projectFileRepository.findByProjectId(projectId));
   }
 
   private String determineContentType(String path) {

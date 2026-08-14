@@ -2,6 +2,7 @@ package com.lovable.services.account_service.service.impl;
 
 import com.lovable.services.account_service.dto.auth.AuthResponse;
 import com.lovable.services.account_service.dto.auth.LoginRequest;
+import com.lovable.services.account_service.dto.auth.RefreshRequest;
 import com.lovable.services.account_service.dto.auth.SignUpRequest;
 import com.lovable.services.account_service.entity.User;
 import com.lovable.services.account_service.mapper.AuthMapper;
@@ -11,7 +12,7 @@ import com.lovable.services.common_lib.dto.UserProfileResponse;
 import com.lovable.services.common_lib.exception.BadRequestException;
 import com.lovable.services.common_lib.exception.ResourceNotFoundException;
 import com.lovable.services.common_lib.security.AuthUtil;
-import jakarta.servlet.http.Cookie;
+import com.lovable.services.common_lib.security.JwtUserPrincipal;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -46,10 +47,7 @@ public class AuthServiceImpl implements AuthService {
     newUser.setPassword(passwordEncoder.encode(signUpRequest.password()));
     userRepository.save(newUser);
 
-    String accessToken = authUtil.generateAccessToken(authMapper.toJwtUserPrincipal(newUser));
-    Cookie cookie = new Cookie("refreshToken", authUtil.generateRefreshToken(authMapper.toJwtUserPrincipal(newUser)));
-
-    return new AuthResponse(accessToken, authMapper.toUserProfileResponse(newUser));
+    return buildAuthResponse(newUser);
   }
 
   public AuthResponse login(LoginRequest loginRequest) {
@@ -60,8 +58,26 @@ public class AuthServiceImpl implements AuthService {
                 loginRequest.username(), loginRequest.password()));
 
     User user = (User) authentication.getPrincipal();
+    return buildAuthResponse(user);
+  }
+
+  public AuthResponse refresh(RefreshRequest refreshRequest) {
+    JwtUserPrincipal principal = authUtil.verifyRefreshToken(refreshRequest.refreshToken());
+
+    User user =
+        userRepository
+            .findById(principal.userId())
+            .orElseThrow(() -> new ResourceNotFoundException("User", String.valueOf(principal.userId())));
+
+    return buildAuthResponse(user);
+  }
+
+  private AuthResponse buildAuthResponse(User user) {
+    JwtUserPrincipal principal = authMapper.toJwtUserPrincipal(user);
     return new AuthResponse(
-        authUtil.generateAccessToken(authMapper.toJwtUserPrincipal(user)), authMapper.toUserProfileResponse(user));
+        authUtil.generateAccessToken(principal),
+        authUtil.generateRefreshToken(principal),
+        authMapper.toUserProfileResponse(user));
   }
 
   public UserProfileResponse getCurrentProfile() {

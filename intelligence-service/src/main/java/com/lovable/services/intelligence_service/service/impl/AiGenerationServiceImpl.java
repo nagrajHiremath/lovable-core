@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
@@ -56,7 +57,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
       Pattern.compile("<file path=\"([^\"]+)\">(.*?)</file>", Pattern.DOTALL);
 
   @Override
-//  @PreAuthorize("@security.canEditProject(#projectId)")
+  @PreAuthorize("@security.canEditProject(#projectId, T(com.lovable.services.common_lib.enums.ProjectPermission).EDIT)")
   public Flux<StreamResponse> streamResponse(String userMessage, Long projectId) {
 
     //        usageService.checkDailyTokensUsage();

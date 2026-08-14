@@ -19,5 +19,5 @@ public interface AccountClient {
     List<UserProfileResponse> getUsersByIds(@RequestParam("ids") List<Long> ids);
 
     @GetMapping("/internal/v1/billing/current-plan")
-    PlanResponse getCurrentSubscribedPlanByUser();
+    PlanResponse getCurrentSubscribedPlanByUser(@RequestParam("userId") Long userId);
 }

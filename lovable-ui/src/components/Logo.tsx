@@ -21,10 +21,7 @@ export function Logo({ className, hideText }: LogoProps) {
         </svg>
       </div>
       {!hideText && (
-        <div className="flex flex-col leading-tight">
-          <span className="text-lg font-semibold tracking-tight">Lovable</span>
-          <span className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Clone</span>
-        </div>
+        <span className="text-lg font-semibold tracking-tight">Lovable</span>
       )}
     </div>
   );

@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Plus, LogOut, Search, Folder, Loader2, MoreVertical, Trash, Download, Edit, Sparkles, FolderPlus, ArrowUpRight, Clock, LayoutGrid, CreditCard, Zap, ShieldCheck } from "lucide-react";
+import { Plus, LogOut, Search, Loader2, MoreVertical, Trash, Download, Edit, FolderPlus, ArrowUpRight, Clock, LayoutGrid, CreditCard, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { api, removeAuthToken, removeUserInfo, getUserInfo } from "@/lib/api";
+import { api, removeAuthToken, removeRefreshToken, removeUserInfo, getUserInfo } from "@/lib/api";
 import { ProjectSummaryResponse, SubscriptionResponse, UserProfileResponse } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { generateGradient, cn } from "@/lib/utils";
@@ -146,7 +146,7 @@ export function ProjectsDashboard() {
         if (!projectToRename || !renameName.trim()) return;
 
         try {
-            await api.updateProject(projectToRename.id.toString(), renameName);
+            await api.updateProject(projectToRename.id.toString(), { name: renameName });
             setProjects(projects.map(p => p.id === projectToRename.id ? { ...p, name: renameName } : p));
             setIsRenameDialogOpen(false);
             setProjectToRename(null);
@@ -159,6 +159,7 @@ export function ProjectsDashboard() {
 
     const handleLogout = () => {
         removeAuthToken();
+        removeRefreshToken();
         removeUserInfo();
         navigate("/");
     };
@@ -247,7 +248,7 @@ export function ProjectsDashboard() {
                                 </div>
                                 <DropdownMenuItem onClick={() => setIsUserDashboardOpen(true)} className="cursor-pointer rounded-lg font-medium text-slate-200 focus:bg-white/10">
                                     <CreditCard className="w-4 h-4 mr-2 text-pink-400" />
-                                    User Dashboard & Subscription
+                                    Account
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={handleLogout} className="text-rose-400 focus:text-rose-300 focus:bg-rose-500/10 cursor-pointer rounded-lg">
                                     <LogOut className="w-4 h-4 mr-2" />
@@ -264,15 +265,11 @@ export function ProjectsDashboard() {
                 {/* Hero Title Section */}
                 <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <div className="space-y-3">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-300 backdrop-blur-md">
-                            <Sparkles className="h-3.5 w-3.5 text-pink-400" />
-                            <span>AI Creation Workspace</span>
-                        </div>
                         <h1 className="bg-gradient-to-r from-[#FF6A5C] via-[#E056A7] to-[#7C4DFF] bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-5xl">
-                            Projects Workspace
+                            Projects
                         </h1>
                         <p className="max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                            Welcome back, <span className="font-semibold text-white">{userName}</span>! Manage, iterate, and build your AI-powered web applications.
+                            Welcome back, <span className="font-semibold text-white">{userName}</span>.
                         </p>
                     </div>
 
@@ -294,12 +291,12 @@ export function ProjectsDashboard() {
                                 <DialogHeader>
                                     <DialogTitle className="text-xl font-bold">Create New Project</DialogTitle>
                                     <DialogDescription className="text-slate-400">
-                                        Give your new workspace project a descriptive name to get started.
+                                        Name your project to get started.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="py-4">
                                     <Input
-                                        placeholder="e.g., E-commerce Dashboard AI"
+                                        placeholder="e.g., E-commerce Dashboard"
                                         value={newProjectName}
                                         onChange={(e) => setNewProjectName(e.target.value)}
                                         onKeyDown={(e) => e.key === "Enter" && handleCreateProject()}

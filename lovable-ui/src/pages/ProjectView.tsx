@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { api, isAuthenticated, removeAuthToken, getUserInfo, removeUserInfo } from "@/lib/api";
+import { api, isAuthenticated, removeAuthToken, removeRefreshToken, getUserInfo, removeUserInfo } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -89,6 +89,7 @@ export function ProjectView() {
 
   const handleLogout = () => {
     removeAuthToken();
+    removeRefreshToken();
     removeUserInfo();
     navigate("/");
   };
@@ -281,7 +282,7 @@ Please analyze this error and fix the code to resolve it.`;
     if (!projectId || !renameName.trim()) return;
 
     try {
-      const updated = await api.updateProject(projectId, renameName);
+      const updated = await api.updateProject(projectId, { name: renameName });
       setProject(prev => prev ? { ...prev, name: updated.name } : null);
       setIsRenameDialogOpen(false);
       toast({ title: "Success", description: "Project renamed successfully" });
@@ -328,7 +329,6 @@ Please analyze this error and fix the code to resolve it.`;
               <span className="font-semibold text-sm">Loading...</span>
             </>
           )}
-          <span className="text-muted-foreground text-xs ml-2">Previewing last saved version</span>
           {project?.role !== 'VIEWER' && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -411,6 +411,8 @@ Please analyze this error and fix the code to resolve it.`;
 
           <ShareDialog
             projectId={projectId}
+            isPublic={project?.isPublic ?? false}
+            onVisibilityChange={(isPublic) => setProject(prev => prev ? { ...prev, isPublic } : null)}
             trigger={
               <Button variant="outline" size="sm" className="h-8 text-xs font-medium" disabled={project?.role === 'VIEWER'}>
                 Share
