@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -133,6 +133,9 @@ export function UserDashboardModal({ open, onOpenChange }: UserDashboardModalPro
               Account
             </DialogTitle>
           </div>
+          <DialogDescription className="sr-only">
+            Profile, subscription, and billing settings.
+          </DialogDescription>
         </DialogHeader>
 
         {loading ? (

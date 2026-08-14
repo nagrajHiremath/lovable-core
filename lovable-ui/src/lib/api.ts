@@ -222,13 +222,43 @@ export const api = {
       throw new Error("No refresh token available");
     }
 
-    const response = await fetch(buildAccountUrl("/auth/refresh"), {
+    const body = JSON.stringify({ refreshToken });
+
+    try {
+      const response = await fetch(buildAccountUrl("/auth/refresh"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+
+      if (response.ok) {
+        const data: AuthResponse = await response.json();
+        setAuthToken(data.token);
+        persistRefreshToken(data);
+        return data;
+      }
+
+      // A real 401/403 means the refresh token itself is dead - anything else
+      // (5xx, etc.) falls through to try the gateway path below.
+      if (response.status === 401 || response.status === 403) {
+        throw new Error("REFRESH_TOKEN_INVALID");
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message === "REFRESH_TOKEN_INVALID") throw error;
+      // Otherwise this was a network-level failure (e.g. VITE_ACCOUNT_API_BASE_URL
+      // not configured for this deployment) - fall through to the gateway path.
+    }
+
+    const response = await fetch(buildApiUrl("/api/v1/account/auth/refresh"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
+      body,
     });
 
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        throw new Error("REFRESH_TOKEN_INVALID");
+      }
       throw new Error("Failed to refresh session");
     }
 
@@ -694,10 +724,12 @@ export const startSessionRefreshLoop = () => {
   const tryRefresh = async () => {
     try {
       await api.refreshToken();
-    } catch {
-      // Refresh token expired or invalid - clear the session. The existing
-      // "not authenticated" checks (e.g. ProjectView's auth guard) will send
-      // the user back to the homepage to log in again next time they act.
+    } catch (error) {
+      // Only clear the session on a confirmed-dead refresh token. A transient
+      // network failure here shouldn't log the user out - just try again next
+      // interval (or on the next call to refreshToken()).
+      if (!(error instanceof Error) || error.message !== "REFRESH_TOKEN_INVALID") return;
+
       removeAuthToken();
       removeRefreshToken();
       if (refreshIntervalId !== null) {
