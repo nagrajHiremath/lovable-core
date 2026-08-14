@@ -424,9 +424,6 @@ Please analyze this error and fix the code to resolve it.`;
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setIsUpgradeModalOpen(true)}>
                 Upgrade
               </Button>
-              <Button size="sm" className="h-8 text-xs bg-gradient-to-r from-[#FF6A5C] via-[#E056A7] to-[#7C4DFF] text-white hover:opacity-90 transition-opacity">
-                Publish
-              </Button>
             </>
           )}
           <Button
